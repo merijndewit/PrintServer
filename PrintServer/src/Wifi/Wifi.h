@@ -25,7 +25,7 @@ namespace PrintServer
         ~Wifi();
         void connect_wifi(void);
         static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-        uint8_t connection_retries = 0;
+        int connection_retries = 0;
 
         bool connected = false;
     };
