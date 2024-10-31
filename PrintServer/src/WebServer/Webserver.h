@@ -1,5 +1,4 @@
 #pragma once
-#include "Webpage.h"
 #include "Config.h"
 
 #include "freertos/FreeRTOS.h"
@@ -18,7 +17,6 @@ namespace PrintServer
     {
     public:
         WebServer();
-        void send_webpage(const char* webpage);
     private:
         httpd_handle_t server = NULL;
     };

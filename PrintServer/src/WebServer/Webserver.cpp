@@ -1,11 +1,13 @@
 #include "Webserver.h"
 #include "Wifi/Wifi.h"
 
+#include "../webpage/index.h"
+
 namespace PrintServer
 {
     esp_err_t send_web_page(httpd_req_t *req)
     {
-        int response = httpd_resp_send(req, webpage, HTTPD_RESP_USE_STRLEN);
+        int response = httpd_resp_send(req, (const char*)webpage_index_html, webpage_index_html_len);
         return response;
     }
 
@@ -30,10 +32,5 @@ namespace PrintServer
         {
             httpd_register_uri_handler(server, &uri_main);
         }
-    }
-
-    void WebServer::send_webpage(const char* webpage)
-    {
-
     }
 }
