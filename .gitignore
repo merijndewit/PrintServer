@@ -1,0 +1,5 @@
+.pio
+PrintServer/.vscode/*
+sdkconfig*
+
+PrintServer/src/Config.h
