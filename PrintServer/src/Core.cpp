@@ -1,7 +1,9 @@
 #include "Core.h"
 #include "driver/gpio.h"
+#include "SD/example.h"
 
 #define LED_PIN GPIO_NUM_22
+
 namespace PrintServer
 {
     Core::Core() : connection_successful(Wifi::init()), webserver()
@@ -10,6 +12,7 @@ namespace PrintServer
         gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
         gpio_set_level(LED_PIN, 0);
+        Example::write_sd();
     }
 
     void Core::update()
