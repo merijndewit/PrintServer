@@ -3,3 +3,5 @@ PrintServer/.vscode/*
 sdkconfig*
 
 PrintServer/src/Config.h
+PrintServer/.cache/
+PrintServer/compile_commands.json

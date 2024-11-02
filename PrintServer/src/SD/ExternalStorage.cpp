@@ -3,6 +3,7 @@
 
 namespace PrintServer
 {
+    static ExternalStorage* external_storage = nullptr;
     ExternalStorage::ExternalStorage()
     {
         esp_err_t ret;
@@ -67,20 +68,45 @@ namespace PrintServer
         spi_bus_free((spi_host_device_t)(host.slot));
     }
 
-    esp_err_t ExternalStorage::write_to_storage(const char *path, char *data)
+    bool ExternalStorage::init()
+    {
+        external_storage = new ExternalStorage();
+        return 1;
+    }
+
+    void ExternalStorage::shutdown()
+    {
+
+    }
+
+    ExternalStorage &ExternalStorage::get_instance()
+    {
+        return *external_storage;
+    }
+
+    void ExternalStorage::open_file(const char *path)
     {
         ESP_LOGI(DEBUG_NAME, "Opening file %s", path);
-        FILE *f = fopen(path, "w");
-        if (f == NULL) 
+        current_open_file = fopen(path, "w");
+        if (current_open_file == NULL) 
         {
             ESP_LOGE(DEBUG_NAME, "Failed to open file for writing");
-            return ESP_FAIL;
         }
-        fprintf(f, data);
-        fclose(f);
+    }
+
+    void ExternalStorage::close_file()
+    {
+        fclose(current_open_file);
+        current_open_file = nullptr;
+    }
+
+    int ExternalStorage::write_to_open_file(char *data, int chars)
+    {
+        int written_chars = fprintf(current_open_file, data, chars);
+        
         ESP_LOGI(DEBUG_NAME, "File written");
 
-        return ESP_OK;
+        return written_chars;
     }
 
     esp_err_t ExternalStorage::print_file(const char *path)
@@ -92,7 +118,7 @@ namespace PrintServer
             ESP_LOGE(DEBUG_NAME, "Failed to open file for reading");
             return ESP_FAIL;
         }
-        char line[EXAMPLE_MAX_CHAR_SIZE];
+        char line[SD_WRITE_MAX_CHAR_SIZE];
         fgets(line, sizeof(line), f);
         fclose(f);
 
@@ -105,5 +131,13 @@ namespace PrintServer
         ESP_LOGI(DEBUG_NAME, "Read from file: '%s'", line);
 
         return ESP_OK;
+    }
+
+    void ExternalStorage::unmount() 
+    {
+        esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
+        ESP_LOGI(DEBUG_NAME, "Card unmounted");
+
+        spi_bus_free((spi_host_device_t)(host.slot));
     };
 }

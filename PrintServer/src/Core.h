@@ -13,9 +13,11 @@ namespace PrintServer
         bool is_running() { return running; }
     private:
         bool running = true;
-        bool connection_successful;
-        WebServer webserver;
-        Timer timer;
+        bool wifi_connection_successful;
+        bool sd_connection_successful;
         unsigned int led_state = 1;
+    private:
+        Timer timer;
+        WebServer webserver;
     };
 };
