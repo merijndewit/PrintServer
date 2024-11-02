@@ -1,20 +1,26 @@
-#pragma once
-#include "driver/sdmmc_host.h"
-#include "driver/sdspi_host.h"
-#include "driver/sdmmc_types.h"
-#include "sdmmc_cmd.h"
+#include <string.h>
+#include <sys/unistd.h>
+#include <sys/stat.h>
 #include "esp_vfs_fat.h"
+#include "sdmmc_cmd.h"
+#include "esp_log.h"
 
-#define USE_SPI_MODE
+#include "../Config.h"
 
 namespace PrintServer
 {
+    #define EXAMPLE_MAX_CHAR_SIZE 64
+    #define MOUNT_POINT "/sdcard"
+
     class ExternalStorage
     {
     public:
         ExternalStorage();
+        ~ExternalStorage();
+        esp_err_t write_to_storage(const char *path, char *data);
+        esp_err_t print_file(const char *path);
     private:
-        sdspi_dev_handle_t sd_handle;
-        sdmmc_card_t sd_card_handle;
+        sdmmc_card_t* card;
+        sdmmc_host_t host;
     };
 }

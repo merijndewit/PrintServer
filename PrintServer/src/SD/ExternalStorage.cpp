@@ -5,41 +5,105 @@ namespace PrintServer
 {
     ExternalStorage::ExternalStorage()
     {
-        sdspi_device_config_t sd_device_config 
-        {
-            .host_id = SPI2_HOST, 
-            .gpio_cs = GPIO_NUM_13, 
-            .gpio_cd = GPIO_NUM_NC, 
-            .gpio_wp = GPIO_NUM_NC, 
-            .gpio_int = GPIO_NUM_NC, 
-            .gpio_wp_polarity = 0,
-        };
+        esp_err_t ret;
 
-        sdspi_host_init_device(&sd_device_config, &sd_handle);
-    
-        sdmmc_host_t sdmmc_host_config
-        {
-            .flags = SDMMC_HOST_FLAG_SPI | SDMMC_HOST_FLAG_DEINIT_ARG, 
-            .slot = sd_handle, 
-            .max_freq_khz = SDMMC_FREQ_DEFAULT, 
-            .io_voltage = 3.3f, 
-            .init = &sdspi_host_init, 
-            .set_bus_width = NULL, 
-            .get_bus_width = NULL, 
-            .set_bus_ddr_mode = NULL, 
-            .set_card_clk = &sdspi_host_set_card_clk, 
-            .set_cclk_always_on = NULL, 
-            .do_transaction = &sdspi_host_do_transaction, 
-            .deinit_p = &sdspi_host_remove_device, 
-            .io_int_enable = &sdspi_host_io_int_enable, 
-            .io_int_wait = &sdspi_host_io_int_wait, 
-            .command_timeout_ms = 0, 
-            .get_real_freq = &sdspi_host_get_real_freq, 
-            .input_delay_phase = SDMMC_DELAY_PHASE_0, 
-            .set_input_delay = NULL, 
-            .get_dma_info = &sdspi_host_get_dma_info,
-        };
+            esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        #ifdef CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED
+                .format_if_mount_failed = true,
+        #else
+                .format_if_mount_failed = false,
+        #endif // EXAMPLE_FORMAT_IF_MOUNT_FAILED
+                .max_files = 5,
+                .allocation_unit_size = 16 * 1024
+            };
+            const char mount_point[] = MOUNT_POINT;
+            ESP_LOGI(DEBUG_NAME, "Initializing SD card");
 
-        sdmmc_card_init(&sdmmc_host_config, &sd_card_handle);
+            ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
+
+            host = SDSPI_HOST_DEFAULT();
+
+            spi_bus_config_t bus_cfg = {
+                .mosi_io_num = PIN_NUM_MOSI,
+                .miso_io_num = PIN_NUM_MISO,
+                .sclk_io_num = PIN_NUM_CLK,
+                .quadwp_io_num = -1,
+                .quadhd_io_num = -1,
+                .max_transfer_sz = 4000,
+            };
+            ret = spi_bus_initialize((spi_host_device_t)(host.slot), &bus_cfg, SDSPI_DEFAULT_DMA);
+            if (ret != ESP_OK) {
+                ESP_LOGE(DEBUG_NAME, "Failed to initialize bus.");
+                return;
+            }
+
+            sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+            slot_config.gpio_cs = (gpio_num_t)PIN_NUM_CS;
+            slot_config.host_id = (spi_host_device_t)(host.slot);
+
+            ESP_LOGI(DEBUG_NAME, "Mounting filesystem");
+            ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+
+            if (ret != ESP_OK) {
+                if (ret == ESP_FAIL) {
+                    ESP_LOGE(DEBUG_NAME, "Failed to mount filesystem. "
+                            "If you want the card to be formatted, set the CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+                } else {
+                    ESP_LOGE(DEBUG_NAME, "Failed to initialize the card (%s). "
+                            "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
+                }
+                return;
+            }
+            ESP_LOGI(DEBUG_NAME, "Filesystem mounted");
+
+            sdmmc_card_print_info(stdout, card);
+    }
+
+    ExternalStorage::~ExternalStorage()
+    {
+        esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
+        ESP_LOGI(DEBUG_NAME, "Card unmounted");
+
+        spi_bus_free((spi_host_device_t)(host.slot));
+    }
+
+    esp_err_t ExternalStorage::write_to_storage(const char *path, char *data)
+    {
+        ESP_LOGI(DEBUG_NAME, "Opening file %s", path);
+        FILE *f = fopen(path, "w");
+        if (f == NULL) 
+        {
+            ESP_LOGE(DEBUG_NAME, "Failed to open file for writing");
+            return ESP_FAIL;
+        }
+        fprintf(f, data);
+        fclose(f);
+        ESP_LOGI(DEBUG_NAME, "File written");
+
+        return ESP_OK;
+    }
+
+    esp_err_t ExternalStorage::print_file(const char *path)
+    {
+        ESP_LOGI(DEBUG_NAME, "Reading file %s", path);
+        FILE *f = fopen(path, "r");
+        if (f == NULL) 
+        {
+            ESP_LOGE(DEBUG_NAME, "Failed to open file for reading");
+            return ESP_FAIL;
+        }
+        char line[EXAMPLE_MAX_CHAR_SIZE];
+        fgets(line, sizeof(line), f);
+        fclose(f);
+
+        // strip newline
+        char *pos = strchr(line, '\n');
+        if (pos) 
+        {
+            *pos = '\0';
+        }
+        ESP_LOGI(DEBUG_NAME, "Read from file: '%s'", line);
+
+        return ESP_OK;
     };
 }
