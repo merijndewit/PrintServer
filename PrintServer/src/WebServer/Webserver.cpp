@@ -9,11 +9,13 @@
 #include "esp_netif.h"
 #include "esp_system.h"
 
+#include "Timers/Timer.h"
+
 namespace PrintServer
 {
-    #define MAX_FILE_SIZE  (200*1024)
-    #define SCRATCH_BUFSIZE  8192
-    #define MAX_FILE_SIZE_STR "200KB"
+    #define MAX_FILE_SIZE  (20000*1024)
+    #define SCRATCH_BUFSIZE 4096
+    #define MAX_FILE_SIZE_STR "20000KB"
 
 
     struct file_server_data 
@@ -107,13 +109,15 @@ namespace PrintServer
         int remaining = 0; 
         remaining = req->content_len;
 
+        ExternalStorage& sd_card = ExternalStorage::get_instance();
+        sd_card.open_file(MOUNT_POINT"/test.txt");
+
+        Timer timer;
+
         
-        ExternalStorage::get_instance().open_file(MOUNT_POINT"/test.txt");
+
         while (remaining > 0) 
         {
-
-            ESP_LOGI(DEBUG_NAME, "Remaining size : %d", remaining);
-
             if ((received = httpd_req_recv(req, buf, MIN(remaining, SCRATCH_BUFSIZE))) <= 0) 
             {
                 if (received == HTTPD_SOCK_ERR_TIMEOUT) 
@@ -125,19 +129,21 @@ namespace PrintServer
                 return ESP_FAIL;
             }
 
-
-            if (received && (received != ExternalStorage::get_instance().write_to_open_file(buf, received))) 
-            {
-
-                ESP_LOGE(DEBUG_NAME, "File write failed!");
-                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to write file to storage");
-                return ESP_FAIL;
-            }
+            int chars_written = sd_card.write_to_open_file(buf, received);
 
             remaining -= received;
+            //ESP_LOGI(DEBUG_NAME, "recieved : %d", received);
+            //ESP_LOGI(DEBUG_NAME, "chars_written : %d", chars_written);
+            //ESP_LOGI(DEBUG_NAME, "remaining : %d", remaining);
         }
 
-        ExternalStorage::get_instance().close_file();
+        float time_taken = timer.get_time() / 1000.f;
+        float file_size = req->content_len / 1000000.f;
+        float upload_speed = file_size / time_taken;
+        ESP_LOGI(DEBUG_NAME, "It took: %f seconds to transfer %f MBs resulting in a speed of %f MB/s", time_taken, file_size, upload_speed);
+
+
+        sd_card.close_file();
 
         httpd_resp_set_status(req, "303 See Other");
         httpd_resp_set_hdr(req, "Location", "/");

@@ -14,9 +14,13 @@ extern "C" void app_main()
     ESP_ERROR_CHECK(ret);
 
     PrintServer::Core core;
+
+    TickType_t lastWakeTime = xTaskGetTickCount();
+    const TickType_t frequency = pdMS_TO_TICKS(100);
     
     while (core.is_running())
     {
        core.update();
+       vTaskDelayUntil(&lastWakeTime, frequency);
     }
 }

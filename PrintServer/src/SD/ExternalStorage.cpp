@@ -8,12 +8,9 @@ namespace PrintServer
     {
         esp_err_t ret;
 
-            esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-        #ifdef CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED
-                .format_if_mount_failed = true,
-        #else
+            esp_vfs_fat_sdmmc_mount_config_t mount_config = 
+            {
                 .format_if_mount_failed = false,
-        #endif // EXAMPLE_FORMAT_IF_MOUNT_FAILED
                 .max_files = 5,
                 .allocation_unit_size = 16 * 1024
             };
@@ -24,16 +21,18 @@ namespace PrintServer
 
             host = SDSPI_HOST_DEFAULT();
 
-            spi_bus_config_t bus_cfg = {
+            spi_bus_config_t bus_cfg = 
+            {
                 .mosi_io_num = PIN_NUM_MOSI,
                 .miso_io_num = PIN_NUM_MISO,
                 .sclk_io_num = PIN_NUM_CLK,
                 .quadwp_io_num = -1,
                 .quadhd_io_num = -1,
-                .max_transfer_sz = 4000,
+                .max_transfer_sz = 8192,
             };
             ret = spi_bus_initialize((spi_host_device_t)(host.slot), &bus_cfg, SDSPI_DEFAULT_DMA);
-            if (ret != ESP_OK) {
+            if (ret != ESP_OK) 
+            {
                 ESP_LOGE(DEBUG_NAME, "Failed to initialize bus.");
                 return;
             }
@@ -45,11 +44,15 @@ namespace PrintServer
             ESP_LOGI(DEBUG_NAME, "Mounting filesystem");
             ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 
-            if (ret != ESP_OK) {
-                if (ret == ESP_FAIL) {
+            if (ret != ESP_OK) 
+            {
+                if (ret == ESP_FAIL) 
+                {
                     ESP_LOGE(DEBUG_NAME, "Failed to mount filesystem. "
                             "If you want the card to be formatted, set the CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
-                } else {
+                } 
+                else 
+                {
                     ESP_LOGE(DEBUG_NAME, "Failed to initialize the card (%s). "
                             "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
                 }
@@ -100,12 +103,25 @@ namespace PrintServer
         current_open_file = nullptr;
     }
 
-    int ExternalStorage::write_to_open_file(char *data, int chars)
+    int ExternalStorage::write_to_open_file(const char *data, int chars)
     {
-        int written_chars = fprintf(current_open_file, data, chars);
+        int written_chars = 0;
         
-        ESP_LOGI(DEBUG_NAME, "File written");
+        if (false)
+        { // a way to write to the file while checking each character
+            for (int i = 0; i < chars; i++) 
+            {
+                if (data[i] < '~') 
+                {
+                    fputc(data[i], current_open_file);
+                    written_chars++;
+                }
+            }
+        }
 
+        {
+            written_chars = fwrite(data, sizeof(char), chars, current_open_file);
+        }
         return written_chars;
     }
 

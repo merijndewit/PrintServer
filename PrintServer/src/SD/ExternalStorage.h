@@ -28,7 +28,7 @@ namespace PrintServer
         void open_file(const char *path);
         void close_file();
 
-        int write_to_open_file(char *data, int chars);
+        int write_to_open_file(const char *data, int chars);
         esp_err_t print_file(const char *path);
         void unmount();
     
