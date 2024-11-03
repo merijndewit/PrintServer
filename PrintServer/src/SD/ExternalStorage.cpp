@@ -12,7 +12,7 @@ namespace PrintServer
             {
                 .format_if_mount_failed = false,
                 .max_files = 5,
-                .allocation_unit_size = 16 * 1024
+                .allocation_unit_size = 16 * 1024,
             };
             const char mount_point[] = MOUNT_POINT;
             ESP_LOGI(DEBUG_NAME, "Initializing SD card");

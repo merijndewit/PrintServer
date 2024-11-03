@@ -40,8 +40,6 @@ function upload()
     var upload_path = "/upload/" + filePath;
     var fileInput = document.getElementById("newfile").files;
 
-    /* Max size of an individual file. Make sure this
-     * value is same as that set in file_server.c */
     var MAX_FILE_SIZE = 20000*1024;
     var MAX_FILE_SIZE_STR = "20MB";
 
@@ -61,6 +59,7 @@ function upload()
     {
         alert("File size must be less than " + MAX_FILE_SIZE_STR + "!");
     } 
+    
     else 
     {
         document.getElementById("newfile").disabled = true;

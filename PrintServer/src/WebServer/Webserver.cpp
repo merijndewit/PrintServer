@@ -16,7 +16,7 @@ namespace PrintServer
     #define MAX_FILE_SIZE  (20000*1024)
     #define SCRATCH_BUFSIZE 4096
     #define MAX_FILE_SIZE_STR "20000KB"
-
+    #define UPLOAD_PATH "/upload/"
 
     struct file_server_data 
     {
@@ -67,7 +67,7 @@ namespace PrintServer
 
     static esp_err_t upload_post_handler(httpd_req_t *req)
     {
-        char filepath[64];
+        char filepath[128];
         struct stat file_stat;
 
         file_server_data* a = static_cast<file_server_data*>(req->user_ctx);
@@ -109,8 +109,16 @@ namespace PrintServer
         int remaining = 0; 
         remaining = req->content_len;
 
+        char file_path[256 + 64]; // should probably make something to calculate the correct size
+        strcpy(file_path, MOUNT_POINT);
+        strcat(file_path, "/");
+        filename += strlen(UPLOAD_PATH); // move pointer by the length of UPLOAD_PATH
+        strcat(file_path, filename);
+
+        ESP_LOGI(DEBUG_NAME, "Opening : %s...", file_path);
+
         ExternalStorage& sd_card = ExternalStorage::get_instance();
-        sd_card.open_file(MOUNT_POINT"/test.txt");
+        sd_card.open_file(file_path);
 
         Timer timer;
 
@@ -164,7 +172,7 @@ namespace PrintServer
 
     httpd_uri_t file_upload = 
     {
-        .uri       = "/upload/*",
+        .uri       = UPLOAD_PATH"*",
         .method    = HTTP_POST,
         .handler   = upload_post_handler,
         .user_ctx  = server_data
