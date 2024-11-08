@@ -68,7 +68,8 @@ function upload()
 
         var file = fileInput[0];
         var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
+        xhttp.onreadystatechange = function() 
+        {
             if (xhttp.readyState == 4) {
                 if (xhttp.status == 200) {
                     document.open();
@@ -87,4 +88,20 @@ function upload()
         xhttp.send(file);
     }
 }
+
+let socket = new WebSocket('ws://' + window.location.hostname + '/ws');
+socket.onopen = function(event) 
+{ 
+    console.log('Connected to WebSocket server'); 
+};
+socket.onmessage = function(event) 
+{ 
+    console.log('Message from server: ' + event.data); 
+};
+
+socket.onclose = function(event) 
+{
+     console.log('Disconnected from WebSocket server'); 
+};
+
 </script>

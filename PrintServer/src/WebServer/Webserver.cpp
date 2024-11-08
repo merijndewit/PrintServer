@@ -162,6 +162,24 @@ namespace PrintServer
         return ESP_OK;
     }
 
+    static esp_err_t socket_handler(httpd_req_t *req)
+    {
+        if (req->method == HTTP_GET) 
+        { 
+            const unsigned char payload[] = {"Websocket connected!"};
+
+            httpd_ws_frame_t ws_pkt; 
+            memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t)); 
+
+            ws_pkt.type = HTTPD_WS_TYPE_TEXT; 
+            ws_pkt.payload = (uint8_t*)&payload; 
+            ws_pkt.len = strlen((char *)ws_pkt.payload); 
+
+            return httpd_ws_send_frame(req, &ws_pkt); 
+        } 
+        return ESP_OK; 
+    }
+
     httpd_uri_t uri_main = 
     {
         .uri = "/",
@@ -176,6 +194,15 @@ namespace PrintServer
         .method    = HTTP_POST,
         .handler   = upload_post_handler,
         .user_ctx  = server_data
+    };
+
+    httpd_uri_t socket = 
+    { 
+        .uri = "/ws", 
+        .method = HTTP_GET, 
+        .handler = socket_handler, 
+        .user_ctx = NULL,
+        .is_websocket = true
     };
     
     WebServer::WebServer(const char* base_path)
@@ -198,6 +225,7 @@ namespace PrintServer
         {
             httpd_register_uri_handler(server, &uri_main);
             httpd_register_uri_handler(server, &file_upload);
+            httpd_register_uri_handler(server, &socket);
         }
     }
 }
