@@ -29,6 +29,7 @@ namespace PrintServer
     {
     public:
         WebServer(const char* base_path);
+        void SendMessageToClients(unsigned char* message);
     private:
         httpd_handle_t server = NULL;
     };

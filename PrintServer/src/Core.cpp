@@ -13,14 +13,6 @@ namespace PrintServer
         gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
         gpio_set_level(LED_PIN, 0);
-
-        //char data[SD_WRITE_MAX_CHAR_SIZE];
-        //const char* file_gcode = MOUNT_POINT"/gcode.txt";
-        //snprintf(data, SD_WRITE_MAX_CHAR_SIZE, "%s\n", "G1 X100 Y100");
-
-        //ExternalStorage::get_instance().write_to_storage(file_gcode, data);
-
-        //ExternalStorage::get_instance().print_file(file_gcode);
     }
 
     void Core::update()
@@ -32,6 +24,9 @@ namespace PrintServer
             led_state %= 2;
             gpio_set_level(LED_PIN, led_state);
             led_state++;
+
+            //unsigned char message[] = { "hi" };
+            //webserver.SendMessageToClients(message);
         }
     }
 }

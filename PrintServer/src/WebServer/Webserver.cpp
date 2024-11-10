@@ -26,6 +26,39 @@ namespace PrintServer
 
     struct file_server_data* server_data = new file_server_data();
 
+    typedef struct websocket_client 
+    { 
+        int fd; 
+        struct websocket_client *next; 
+    } websocket_client_t; 
+
+    static websocket_client_t *clients = NULL; 
+    static httpd_handle_t server = NULL; 
+
+    static void add_client(int fd) 
+    { 
+        websocket_client_t *client = (websocket_client_t *)malloc(sizeof(websocket_client_t)); 
+        client->fd = fd; 
+        client->next = clients; 
+        clients = client; 
+    }
+
+    static void remove_client(int fd) 
+    { 
+        websocket_client_t **cur = &clients; 
+        while (*cur != NULL) 
+        { 
+            if ((*cur)->fd == fd) 
+            { 
+                websocket_client_t *to_delete = *cur; 
+                *cur = (*cur)->next; 
+                free(to_delete); 
+                return; 
+            } 
+            cur = &(*cur)->next; 
+        } 
+    }
+
     esp_err_t send_web_page(httpd_req_t *req)
     {
         int response = httpd_resp_send(req, (const char*)webpage_index_html, webpage_index_html_len);
@@ -164,8 +197,11 @@ namespace PrintServer
 
     static esp_err_t socket_handler(httpd_req_t *req)
     {
+        esp_err_t error_return = ESP_OK;
         if (req->method == HTTP_GET) 
         { 
+            add_client(httpd_req_to_sockfd(req));
+
             const unsigned char payload[] = {"Websocket connected!"};
 
             httpd_ws_frame_t ws_pkt; 
@@ -175,9 +211,16 @@ namespace PrintServer
             ws_pkt.payload = (uint8_t*)&payload; 
             ws_pkt.len = strlen((char *)ws_pkt.payload); 
 
-            return httpd_ws_send_frame(req, &ws_pkt); 
+            error_return = httpd_ws_send_frame(req, &ws_pkt); //will send a websocket response to the connecting websocket client
         } 
-        return ESP_OK; 
+        
+        if (error_return != ESP_OK) 
+        { 
+            ESP_LOGE(DEBUG_NAME, "WebSocket recv frame failed: %d", error_return); 
+            remove_client(httpd_req_to_sockfd(req)); 
+        }
+        
+        return error_return; 
     }
 
     httpd_uri_t uri_main = 
@@ -226,6 +269,22 @@ namespace PrintServer
             httpd_register_uri_handler(server, &uri_main);
             httpd_register_uri_handler(server, &file_upload);
             httpd_register_uri_handler(server, &socket);
+        }
+    }
+
+    //sill send a message to all connected clients
+    void WebServer::SendMessageToClients(unsigned char* message)
+    {
+        websocket_client_t *client = clients; 
+        httpd_ws_frame_t ws_pkt; 
+        memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t)); 
+        ws_pkt.payload = (uint8_t *)message; 
+        ws_pkt.len = strlen((const char*)message); 
+        ws_pkt.type = HTTPD_WS_TYPE_TEXT; 
+        while (client != NULL)
+        { 
+            httpd_ws_send_frame_async(server, client->fd, &ws_pkt); 
+            client = client->next; 
         }
     }
 }
