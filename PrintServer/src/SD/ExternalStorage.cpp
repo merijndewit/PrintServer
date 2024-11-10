@@ -103,6 +103,7 @@ namespace PrintServer
         current_open_file = nullptr;
     }
 
+    //Returns chars written
     int ExternalStorage::write_to_open_file(const char *data, int chars)
     {
         int written_chars = 0;

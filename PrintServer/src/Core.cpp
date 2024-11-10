@@ -7,7 +7,7 @@
 namespace PrintServer
 {
     const char* base_path = "/data";
-    Core::Core() : wifi_connection_successful(Wifi::init()), sd_connection_successful(ExternalStorage::init()),  webserver(base_path)
+    Core::Core() : wifi_connection_successful(Wifi::init()), sd_connection_successful(ExternalStorage::init()),  webserver_running(WebServer::init(base_path))
     {
         esp_rom_gpio_pad_select_gpio(LED_PIN);
         gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);

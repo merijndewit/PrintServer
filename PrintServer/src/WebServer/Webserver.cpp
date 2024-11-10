@@ -13,39 +13,21 @@
 
 namespace PrintServer
 {
-    #define MAX_FILE_SIZE  (20000*1024)
-    #define SCRATCH_BUFSIZE 4096
-    #define MAX_FILE_SIZE_STR "20000KB"
-    #define UPLOAD_PATH "/upload/"
+    static WebServer* webserver = nullptr;
 
-    struct file_server_data 
-    {
-        char base_path[ESP_VFS_PATH_MAX + 1];
-        char scratch[SCRATCH_BUFSIZE];
-    };
+    struct file_server_data* server_data = new file_server_data(); 
 
-    struct file_server_data* server_data = new file_server_data();
-
-    typedef struct websocket_client 
-    { 
-        int fd; 
-        struct websocket_client *next; 
-    } websocket_client_t; 
-
-    static websocket_client_t *clients = NULL; 
-    static httpd_handle_t server = NULL; 
-
-    static void add_client(int fd) 
+    void WebServer::add_client(int fd) 
     { 
         websocket_client_t *client = (websocket_client_t *)malloc(sizeof(websocket_client_t)); 
         client->fd = fd; 
-        client->next = clients; 
-        clients = client; 
+        client->next = webserver->clients; 
+        webserver->clients = client; 
     }
 
-    static void remove_client(int fd) 
+    void WebServer::remove_client(int fd) 
     { 
-        websocket_client_t **cur = &clients; 
+        websocket_client_t** cur = &webserver->clients; 
         while (*cur != NULL) 
         { 
             if ((*cur)->fd == fd) 
@@ -59,18 +41,18 @@ namespace PrintServer
         } 
     }
 
-    esp_err_t send_web_page(httpd_req_t *req)
+    esp_err_t WebServer::send_web_page(httpd_req_t *req)
     {
         int response = httpd_resp_send(req, (const char*)webpage_index_html, webpage_index_html_len);
         return response;
     }
 
-    esp_err_t get_req_handler(httpd_req_t *req)
+    esp_err_t WebServer::get_req_handler(httpd_req_t *req)
     {
         return send_web_page(req);
     }
 
-    static const char* get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
+    const char* WebServer::get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
     {
         size_t base_pathlen = strlen(base_path);
         size_t pathlen = strlen(uri);
@@ -98,7 +80,7 @@ namespace PrintServer
     }
 
 
-    static esp_err_t upload_post_handler(httpd_req_t *req)
+    esp_err_t WebServer::upload_post_handler(httpd_req_t *req)
     {
         char filepath[128];
         struct stat file_stat;
@@ -139,8 +121,8 @@ namespace PrintServer
         char *buf = ((file_server_data *)req->user_ctx)->scratch;
         int received = 0;
 
-        int remaining = 0; 
-        remaining = req->content_len;
+        int remaining = req->content_len; 
+        int total_length = req->content_len;
 
         char file_path[256 + 64]; // should probably make something to calculate the correct size
         strcpy(file_path, MOUNT_POINT);
@@ -154,8 +136,6 @@ namespace PrintServer
         sd_card.open_file(file_path);
 
         Timer timer;
-
-        
 
         while (remaining > 0) 
         {
@@ -173,9 +153,7 @@ namespace PrintServer
             int chars_written = sd_card.write_to_open_file(buf, received);
 
             remaining -= received;
-            //ESP_LOGI(DEBUG_NAME, "recieved : %d", received);
-            //ESP_LOGI(DEBUG_NAME, "chars_written : %d", chars_written);
-            //ESP_LOGI(DEBUG_NAME, "remaining : %d", remaining);
+            ESP_LOGI(DEBUG_NAME, "Uploaded : %f perc", (abs(remaining / (float)total_length - 1) * 100));
         }
 
         float time_taken = timer.get_time() / 1000.f;
@@ -195,7 +173,7 @@ namespace PrintServer
         return ESP_OK;
     }
 
-    static esp_err_t socket_handler(httpd_req_t *req)
+    esp_err_t WebServer::socket_handler(httpd_req_t *req)
     {
         esp_err_t error_return = ESP_OK;
         if (req->method == HTTP_GET) 
@@ -222,31 +200,6 @@ namespace PrintServer
         
         return error_return; 
     }
-
-    httpd_uri_t uri_main = 
-    {
-        .uri = "/",
-        .method = HTTP_GET,
-        .handler = get_req_handler,
-        .user_ctx = NULL
-    };
-
-    httpd_uri_t file_upload = 
-    {
-        .uri       = UPLOAD_PATH"*",
-        .method    = HTTP_POST,
-        .handler   = upload_post_handler,
-        .user_ctx  = server_data
-    };
-
-    httpd_uri_t socket = 
-    { 
-        .uri = "/ws", 
-        .method = HTTP_GET, 
-        .handler = socket_handler, 
-        .user_ctx = NULL,
-        .is_websocket = true
-    };
     
     WebServer::WebServer(const char* base_path)
     {
@@ -266,10 +219,46 @@ namespace PrintServer
         config.uri_match_fn = httpd_uri_match_wildcard;
         if (httpd_start(&server, &config) == ESP_OK)
         {
+            httpd_uri_t uri_main = 
+            {
+                .uri = "/",
+                .method = HTTP_GET,
+                .handler = get_req_handler,
+                .user_ctx = NULL
+            };
+
+            httpd_uri_t file_upload = 
+            {
+                .uri       = UPLOAD_PATH"*",
+                .method    = HTTP_POST,
+                .handler   = upload_post_handler,
+                .user_ctx  = server_data
+            };
+
+            httpd_uri_t socket = 
+            { 
+                .uri = "/ws", 
+                .method = HTTP_GET, 
+                .handler = WebServer::socket_handler, 
+                .user_ctx = NULL,
+                .is_websocket = true
+            };
+
             httpd_register_uri_handler(server, &uri_main);
             httpd_register_uri_handler(server, &file_upload);
             httpd_register_uri_handler(server, &socket);
         }
+    }
+
+    bool WebServer::init(const char* base_path)
+    {
+        webserver = new WebServer(base_path);
+        return true;
+    }
+
+    void WebServer::shutdown()
+    {
+
     }
 
     //sill send a message to all connected clients

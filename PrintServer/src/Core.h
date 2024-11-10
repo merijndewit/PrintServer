@@ -15,9 +15,9 @@ namespace PrintServer
         bool running = true;
         bool wifi_connection_successful;
         bool sd_connection_successful;
+        bool webserver_running;
         unsigned int led_state = 1;
     private:
         Timer timer;
-        WebServer webserver;
     };
 };
