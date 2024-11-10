@@ -31,7 +31,7 @@ namespace PrintServer
         int write_to_open_file(const char *data, int chars);
         esp_err_t print_file(const char *path);
         void unmount();
-    
+        float get_size() { return gb_size; };
     private:
         ExternalStorage();
         ~ExternalStorage();
@@ -39,5 +39,6 @@ namespace PrintServer
         sdmmc_card_t* card;
         sdmmc_host_t host;
         FILE* current_open_file = nullptr;
+        float gb_size = 0;
     };
 }

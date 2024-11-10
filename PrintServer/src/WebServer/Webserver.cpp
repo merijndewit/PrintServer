@@ -3,6 +3,7 @@
 #include "../webpage/index.h"
 #include "SD/ExternalStorage.h"
 
+#include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -150,10 +151,15 @@ namespace PrintServer
                 return ESP_FAIL;
             }
 
-            int chars_written = sd_card.write_to_open_file(buf, received);
+            sd_card.write_to_open_file(buf, received);
 
             remaining -= received;
-            ESP_LOGI(DEBUG_NAME, "Uploaded : %f perc", (abs(remaining / (float)total_length - 1) * 100));
+
+            char buffer[128];
+            float progress_precentage = (abs(remaining / (float)total_length - 1) * 100);
+            unsigned int buffer_length = sprintf(buffer, "Upload progress: %.2f.", progress_precentage);
+            
+            webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
         }
 
         float time_taken = timer.get_time() / 1000.f;
@@ -161,15 +167,7 @@ namespace PrintServer
         float upload_speed = file_size / time_taken;
         ESP_LOGI(DEBUG_NAME, "It took: %f seconds to transfer %f MBs resulting in a speed of %f MB/s", time_taken, file_size, upload_speed);
 
-
         sd_card.close_file();
-
-        httpd_resp_set_status(req, "303 See Other");
-        httpd_resp_set_hdr(req, "Location", "/");
-    #ifdef CONFIG_EXAMPLE_HTTPD_CONN_CLOSE_HEADER
-        httpd_resp_set_hdr(req, "Connection", "close");
-    #endif
-        httpd_resp_sendstr(req, "File uploaded successfully");
         return ESP_OK;
     }
 
@@ -179,17 +177,17 @@ namespace PrintServer
         if (req->method == HTTP_GET) 
         { 
             add_client(httpd_req_to_sockfd(req));
+            
+            unsigned char payload[] = {"Websocket connected!"};
 
-            const unsigned char payload[] = {"Websocket connected!"};
+            //will send a websocket response to the connecting websocket client
+            error_return = WebServer::SendMessageToClient(req, payload);
 
-            httpd_ws_frame_t ws_pkt; 
-            memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t)); 
+            char buffer[128];
+            unsigned int buffer_length = sprintf(buffer, "1;%.2f GB", ExternalStorage::get_instance().get_size());
 
-            ws_pkt.type = HTTPD_WS_TYPE_TEXT; 
-            ws_pkt.payload = (uint8_t*)&payload; 
-            ws_pkt.len = strlen((char *)ws_pkt.payload); 
-
-            error_return = httpd_ws_send_frame(req, &ws_pkt); //will send a websocket response to the connecting websocket client
+            //will send a websocket response to the connecting websocket client
+            webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
         } 
         
         if (error_return != ESP_OK) 
@@ -262,18 +260,30 @@ namespace PrintServer
     }
 
     //sill send a message to all connected clients
-    void WebServer::SendMessageToClients(unsigned char* message)
+    void WebServer::SendMessageToClients(unsigned char* message, unsigned int buffer_length)
     {
         websocket_client_t *client = clients; 
         httpd_ws_frame_t ws_pkt; 
         memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t)); 
         ws_pkt.payload = (uint8_t *)message; 
-        ws_pkt.len = strlen((const char*)message); 
+        ws_pkt.len = (buffer_length == 0) ? strlen((const char*)message) : buffer_length; 
         ws_pkt.type = HTTPD_WS_TYPE_TEXT; 
         while (client != NULL)
         { 
             httpd_ws_send_frame_async(server, client->fd, &ws_pkt); 
             client = client->next; 
         }
+    }
+
+    esp_err_t WebServer::SendMessageToClient(httpd_req_t* req, unsigned char* message)
+    {
+        httpd_ws_frame_t ws_pkt; 
+        memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t)); 
+
+        ws_pkt.type = HTTPD_WS_TYPE_TEXT; 
+        ws_pkt.payload = (uint8_t*)message; 
+        ws_pkt.len = strlen((char *)ws_pkt.payload); 
+
+        return httpd_ws_send_frame(req, &ws_pkt);
     }
 }

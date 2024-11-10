@@ -43,7 +43,6 @@ namespace PrintServer
 
         ESP_LOGI(DEBUG_NAME, "Mounting filesystem");
         ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
-
         if (ret != ESP_OK) 
         {
             if (ret == ESP_FAIL) 
@@ -61,6 +60,8 @@ namespace PrintServer
         ESP_LOGI(DEBUG_NAME, "Filesystem mounted");
 
         sdmmc_card_print_info(stdout, card);
+
+        gb_size = card->csd.capacity * 512 / 1000000000.f;
     }
 
     ExternalStorage::~ExternalStorage()
