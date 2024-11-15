@@ -2,92 +2,131 @@
 <html>
 <link href='https://fonts.googleapis.com/css?family=Audiowide' rel='stylesheet'>
 <body>
-    <image src="https://i.ibb.co/PYfFcF9/Print-Server-Logo.png" style="width:20%;">
 
-        <input id="newfile" type="file" onchange="setpath()" style="width:100%;">
-        <input id="filepath" type="text">
-        <button id="upload" type="button" onclick="upload()">Upload</button>
-
-
-        <div class="sd_container">
-            <img src="https://i.ibb.co/PGtnbyj/sd-card.png" alt="sd-card" style="width:25%;">
-            <div class="centered">?</div>
+    <div class="top_bar">
+        <image src="https://i.ibb.co/PYfFcF9/Print-Server-Logo.png" style="aspect-ratio:inherit;">
+        <div class="top_container">
+            <div class="crayola stop">
+                <strong>Stop</strong> <br>
+            </div>
+            <div class="vanilla top_status">
+                <strong>Status</strong> <br>
+            </div>
         </div>
+    </div>
 
-        <script>
-            function setpath() {
-                var default_path = document.getElementById("newfile").files[0].name;
-                document.getElementById("filepath").value = default_path;
-            }
+    <div id="main_panels">
+        <div class="sandy_brown main_panel">
+            <strong>Hardware</strong> <br>
+            <div class="sd_container">
+                <img src="https://i.ibb.co/PGtnbyj/sd-card.png" alt="sd-card" style="width:50%;">
+                <div class="centered">?</div>
+            </div>
+        </div>
+        <div class="cerulean main_panel">
+            <strong>Upload</strong> <br>
+            <div class="upload_container">
+                <input id="selectedFile" type="file" onchange="setpath()" style="display: none;">
+                <input type="button" value="Browse..." onclick="document.getElementById('selectedFile').click();" />
+                <input id="filepath" type="text">
+                <button id="upload" type="button" onclick="upload()">Upload</button>
+            </div>
+        </div>
+        <div class="crayola main_panel">
+            <strong>Stats</strong>
+        </div>
+    </div>
 
-            function upload() {
-                var filePath = document.getElementById("filepath").value;
-                var upload_path = "/upload/" + filePath;
-                var fileInput = document.getElementById("newfile").files;
+    <script>
+        function setpath() {
+            var default_path = document.getElementById("selectedFile").files[0].name;
+            document.getElementById("filepath").value = default_path;
+        }
 
-                var MAX_FILE_SIZE = 20000 * 1024;
-                var MAX_FILE_SIZE_STR = "20MB";
+        function upload() {
+            var filePath = document.getElementById("filepath").value;
+            var upload_path = "/upload/" + filePath;
+            var fileInput = document.getElementById("newfile").files;
 
-                if (fileInput.length == 0) {
-                    alert("No file selected!");
-                } else if (filePath.length == 0) {
-                    alert("File path on server is not set!");
-                } else if (filePath.indexOf(' ') >= 0) {
-                    alert("File path on server cannot have spaces!");
-                } else if (filePath[filePath.length - 1] == '/') {
-                    alert("File name not specified after path!");
-                } else if (fileInput[0].size > MAX_FILE_SIZE) {
-                    alert("File size must be less than " + MAX_FILE_SIZE_STR + "!");
-                } else {
-                    document.getElementById("newfile").disabled = true;
-                    document.getElementById("filepath").disabled = true;
-                    document.getElementById("upload").disabled = true;
+            var MAX_FILE_SIZE = 20000 * 1024;
+            var MAX_FILE_SIZE_STR = "20MB";
 
-                    var file = fileInput[0];
-                    var xhttp = new XMLHttpRequest();
-                    xhttp.onreadystatechange = function() {
-                        if (xhttp.readyState == 4) {
-                            if (xhttp.status == 200) {
-                                document.open();
-                                document.write(xhttp.responseText);
-                                document.close();
-                            } else if (xhttp.status == 0) {
-                                alert("Server closed the connection abruptly!");
-                                location.reload();
-                            } else {
-                                alert(xhttp.status + " Error!\n" + xhttp.responseText);
-                                location.reload();
-                            }
+            if (fileInput.length == 0) {
+                alert("No file selected!");
+            } else if (filePath.length == 0) {
+                alert("File path on server is not set!");
+            } else if (filePath.indexOf(' ') >= 0) {
+                alert("File path on server cannot have spaces!");
+            } else if (filePath[filePath.length - 1] == '/') {
+                alert("File name not specified after path!");
+            } else if (fileInput[0].size > MAX_FILE_SIZE) {
+                alert("File size must be less than " + MAX_FILE_SIZE_STR + "!");
+            } else {
+                document.getElementById("newfile").disabled = true;
+                document.getElementById("filepath").disabled = true;
+                document.getElementById("upload").disabled = true;
+
+                var file = fileInput[0];
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (xhttp.readyState == 4) {
+                        if (xhttp.status == 200) {
+                            document.open();
+                            document.write(xhttp.responseText);
+                            document.close();
+                        } else if (xhttp.status == 0) {
+                            alert("Server closed the connection abruptly!");
+                            location.reload();
+                        } else {
+                            alert(xhttp.status + " Error!\n" + xhttp.responseText);
+                            location.reload();
                         }
-                    };
-                    xhttp.open("POST", upload_path, true);
-                    xhttp.send(file);
-                }
+                    }
+                };
+                xhttp.open("POST", upload_path, true);
+                xhttp.send(file);
             }
+        }
 
-            let socket = new WebSocket('ws://' + window.location.hostname + '/ws');
-            socket.onopen = function(event) {
-                console.log('Connected to WebSocket server');
-            };
-            socket.onmessage = function(event) {
-                console.log('Message from server: ' + event.data);
-            };
+        let socket = new WebSocket('ws://' + window.location.hostname + '/ws');
+        socket.onopen = function(event) {
+            console.log('Connected to WebSocket server');
+        };
+        socket.onmessage = function(event) {
+            console.log('Message from server: ' + event.data);
+        };
 
-            socket.onclose = function(event) {
-                console.log('Disconnected from WebSocket server');
-            };
+        socket.onclose = function(event) {
+            console.log('Disconnected from WebSocket server');
+        };
         </script>
 
         <style>
             /* Container holding the image and the text */
+            /* #f49d4b #f5ee9e #2c728f #db6c79*/
 
             .sd_container {
                 position: relative;
                 margin-left: auto; 
                 margin-right: 0;
                 text-align: center;
-                color: black;
                 float: right;
+            }
+
+            .upload_container {
+                width: 100%;
+                height: 14%;
+                display: flex;
+            }
+
+            .upload_container input#filepath
+            {
+                width: 80%;
+            }
+
+            .upload_container input#filepath
+            {
+                width: 80%;
             }
 
             /* Centered text */
@@ -100,6 +139,82 @@
                 font-size: 3vw;
                 /*font-family: 'Audiowide';*/
                 font-family: 'Varela Round';
+            }
+
+            #main_panels {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .main_panel{
+                width: 30%;
+                height: 30vh;
+                margin:50px;
+                padding: 30px;
+                border-radius: 25px;
+            }
+
+            .sandy_brown
+            {
+                background-color: #f49d4b;
+                color: #623f1e;
+                font-family: 'Varela Round';
+            }
+
+            .vanilla
+            {
+                background-color: #f5ee9e;
+                color: #625f3f;
+                font-family: 'Varela Round';
+            }
+            
+            .cerulean
+            {
+                background-color: #2c728f;
+                color: #abc7d2;
+                font-family: 'Varela Round';
+            }
+            
+            .crayola
+            {
+                background-color: #db6c79;
+                color: #582b30;
+                font-family: 'Varela Round';
+            }
+
+            .top_bar {
+                background-color: #fff;
+                overflow: hidden;
+                height: 8vh;
+                min-height: 60px;
+                margin: 0px;
+                display: flex;
+                justify-content: space-between;
+
+            }
+            
+            .top_container {
+                width: 30%;
+                display: flex;
+            }
+            .stop {
+                flex: 1;
+                border-radius: 5px;
+                margin: 8px;
+                padding: 4px;
+            }
+
+            .top_status {
+                flex: 5;
+                border-radius: 5px;
+                margin: 8px;
+                padding: 4px;
+            }
+
+            body {
+                margin: 0;
+                background-color: #f2f2f2;
             }
         </style>
 
