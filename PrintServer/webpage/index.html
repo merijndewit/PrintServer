@@ -16,14 +16,17 @@
     </div>
 
     <div id="main_panels">
-        <div class="sandy_brown main_panel">
+        <div class="sandy_brown main_panel sandy_brown_shadow">
             <strong>Hardware</strong> <br>
             <div class="sd_container">
                 <img src="https://i.ibb.co/PGtnbyj/sd-card.png" alt="sd-card" style="width:50%;">
                 <div class="centered">?</div>
             </div>
         </div>
-        <div class="cerulean main_panel">
+        <div class="cerulean main_panel cerulean_shadow">
+            <div class="progress_bar">
+				<span id="upload_progress_bar" class="progress_bar_fill" style="width: 0%;"></span>
+			</div>
             <strong>Upload</strong> <br>
             <div class="upload_container">
                 <input id="selectedFile" type="file" onchange="setpath()" style="display: none;">
@@ -32,7 +35,7 @@
                 <button id="upload" type="button" onclick="upload()">Upload</button>
             </div>
         </div>
-        <div class="crayola main_panel">
+        <div class="crayola main_panel crayola_shadow">
             <strong>Stats</strong>
         </div>
     </div>
@@ -46,7 +49,7 @@
         function upload() {
             var filePath = document.getElementById("filepath").value;
             var upload_path = "/upload/" + filePath;
-            var fileInput = document.getElementById("newfile").files;
+            var fileInput = document.getElementById("selectedFile").files;
 
             var MAX_FILE_SIZE = 20000 * 1024;
             var MAX_FILE_SIZE_STR = "20MB";
@@ -62,7 +65,6 @@
             } else if (fileInput[0].size > MAX_FILE_SIZE) {
                 alert("File size must be less than " + MAX_FILE_SIZE_STR + "!");
             } else {
-                document.getElementById("newfile").disabled = true;
                 document.getElementById("filepath").disabled = true;
                 document.getElementById("upload").disabled = true;
 
@@ -94,6 +96,18 @@
         };
         socket.onmessage = function(event) {
             console.log('Message from server: ' + event.data);
+
+            const command = event.data.split(':');
+
+            console.log(command[0]);
+            switch (Number(command[0])) {
+                case 10:
+                    document.getElementById("upload_progress_bar").style.width = command[1];
+                    break;
+            
+                default:
+                    break;
+            }
         };
 
         socket.onclose = function(event) {
@@ -162,11 +176,21 @@
                 font-family: 'Varela Round';
             }
 
+            .sandy_brown_shadow
+            {
+                box-shadow: 0px 0px 81px 0px #f49d4bae;
+            }
+
             .vanilla
             {
                 background-color: #f5ee9e;
                 color: #625f3f;
                 font-family: 'Varela Round';
+            }
+
+            .vanilla_shadow
+            {
+                box-shadow: 0px 0px 81px 0px #f5ee9eae;
             }
             
             .cerulean
@@ -176,11 +200,21 @@
                 font-family: 'Varela Round';
             }
             
+            .cerulean_shadow
+            {
+                box-shadow: 0px 0px 81px 0px #2c718fae;
+            }
+
             .crayola
             {
                 background-color: #db6c79;
                 color: #582b30;
                 font-family: 'Varela Round';
+            }
+
+            .crayola_shadow
+            {
+                box-shadow: 0px 0px 81px 0px #db6c79ae;
             }
 
             .top_bar {
@@ -211,6 +245,21 @@
                 margin: 8px;
                 padding: 4px;
             }
+
+            .progress_bar {
+				width: 100%;
+				background-color: #2c728f;
+				padding: 3px;
+				border-radius: 3px;
+			}
+			
+			.progress_bar_fill {
+				display: block;
+				height: 22px;
+				background-color: #abc7d2;
+				border-radius: 3px;
+				transition: width 200ms ease-in-out;
+			}
 
             body {
                 margin: 0;

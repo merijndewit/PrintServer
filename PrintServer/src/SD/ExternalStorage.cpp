@@ -1,5 +1,6 @@
 #include "ExternalStorage.h"
 #include "Config.h"
+#include "Timers/Timer.h"
 
 namespace PrintServer
 {
@@ -20,6 +21,7 @@ namespace PrintServer
         ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
 
         host = SDSPI_HOST_DEFAULT();
+        host.max_freq_khz = SDMMC_FREQ_52M;
 
         spi_bus_config_t bus_cfg = 
         {
@@ -59,9 +61,11 @@ namespace PrintServer
         }
         ESP_LOGI(DEBUG_NAME, "Filesystem mounted");
 
+
         sdmmc_card_print_info(stdout, card);
 
-        gb_size = card->csd.capacity * 512 / 1000000000.f;
+        uint64_t capacity = (double)card->csd.capacity * card->csd.sector_size / (1024.0 * 1024.0 * 1024.0);
+        gb_size = capacity;
     }
 
     ExternalStorage::~ExternalStorage()
@@ -120,10 +124,11 @@ namespace PrintServer
                 }
             }
         }
-
+        Timer timer;
         {
             written_chars = fwrite(data, sizeof(char), chars, current_open_file);
         }
+        ESP_LOGI(DEBUG_NAME, "Reading file %.2f", timer.get_time());
         return written_chars;
     }
 

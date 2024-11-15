@@ -138,6 +138,8 @@ namespace PrintServer
 
         Timer timer;
 
+        char buffer[32];
+
         while (remaining > 0) 
         {
             if ((received = httpd_req_recv(req, buf, MIN(remaining, SCRATCH_BUFSIZE))) <= 0) 
@@ -155,9 +157,8 @@ namespace PrintServer
 
             remaining -= received;
 
-            char buffer[128];
             float progress_precentage = (abs(remaining / (float)total_length - 1) * 100);
-            unsigned int buffer_length = sprintf(buffer, "Upload progress: %.2f.", progress_precentage);
+            unsigned int buffer_length = sprintf(buffer, "10: %.2f%%", progress_precentage);
             
             webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
         }

@@ -26,7 +26,7 @@
 namespace PrintServer
 {
     #define MAX_FILE_SIZE  (20000*1024)
-    #define SCRATCH_BUFSIZE 4096
+    #define SCRATCH_BUFSIZE 65536
     #define MAX_FILE_SIZE_STR "20000KB"
     #define UPLOAD_PATH "/upload/"
 
