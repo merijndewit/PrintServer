@@ -137,6 +137,7 @@ namespace PrintServer
         sd_card.open_file(file_path);
 
         Timer timer;
+        float writing_time = 0;
 
         char buffer[32];
 
@@ -153,13 +154,15 @@ namespace PrintServer
                 return ESP_FAIL;
             }
 
+            Timer write_timer;
             sd_card.write_to_open_file(buf, received);
+            writing_time += write_timer.get_time();
 
             remaining -= received;
 
             float progress_precentage = (abs(remaining / (float)total_length - 1) * 100);
-            unsigned int buffer_length = sprintf(buffer, "10: %.2f%%", progress_precentage);
-            
+            unsigned int buffer_length = sprintf(buffer, "10:%.2f%%", progress_precentage);
+                        
             webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
         }
 
@@ -167,6 +170,7 @@ namespace PrintServer
         float file_size = req->content_len / 1000000.f;
         float upload_speed = file_size / time_taken;
         ESP_LOGI(DEBUG_NAME, "It took: %f seconds to transfer %f MBs resulting in a speed of %f MB/s", time_taken, file_size, upload_speed);
+        ESP_LOGI(DEBUG_NAME, "Writing time was: %f ms", writing_time);
 
         sd_card.close_file();
         return ESP_OK;

@@ -1,6 +1,6 @@
 #include "ExternalStorage.h"
 #include "Config.h"
-#include "Timers/Timer.h"
+
 
 namespace PrintServer
 {
@@ -21,7 +21,7 @@ namespace PrintServer
         ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
 
         host = SDSPI_HOST_DEFAULT();
-        host.max_freq_khz = SDMMC_FREQ_52M;
+        host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 
         spi_bus_config_t bus_cfg = 
         {
@@ -112,23 +112,8 @@ namespace PrintServer
     int ExternalStorage::write_to_open_file(const char *data, int chars)
     {
         int written_chars = 0;
+        written_chars = fwrite(data, sizeof(char), chars, current_open_file);
         
-        if (false)
-        { // a way to write to the file while checking each character
-            for (int i = 0; i < chars; i++) 
-            {
-                if (data[i] < '~') 
-                {
-                    fputc(data[i], current_open_file);
-                    written_chars++;
-                }
-            }
-        }
-        Timer timer;
-        {
-            written_chars = fwrite(data, sizeof(char), chars, current_open_file);
-        }
-        ESP_LOGI(DEBUG_NAME, "Reading file %.2f", timer.get_time());
         return written_chars;
     }
 
