@@ -123,7 +123,6 @@ namespace PrintServer
         int received = 0;
 
         int remaining = req->content_len; 
-        int total_length = req->content_len;
 
         char file_path[256 + 64]; // should probably make something to calculate the correct size
         strcpy(file_path, MOUNT_POINT);
@@ -140,6 +139,9 @@ namespace PrintServer
         float writing_time = 0;
 
         char buffer[32];
+
+        int total_length = req->content_len;
+        float percentage_updated = 0;
 
         while (remaining > 0) 
         {
@@ -160,10 +162,17 @@ namespace PrintServer
 
             remaining -= received;
 
-            float progress_precentage = (abs(remaining / (float)total_length - 1) * 100);
-            unsigned int buffer_length = sprintf(buffer, "10:%.2f%%", progress_precentage);
-                        
-            webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
+            float percentage_complete = (abs(remaining / (float)total_length - 1) * 100);
+
+            if (percentage_complete > percentage_updated + 5)
+            {
+                unsigned int buffer_length = sprintf(buffer, "10:%.2f%%", percentage_complete);
+                            
+                webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
+                percentage_updated = percentage_complete;
+            }
+            
+
         }
 
         float time_taken = timer.get_time() / 1000.f;

@@ -1,8 +1,3 @@
-
-#pragma once
-#define SOC_SDMMC_USE_GPIO_MATRIX
-//#define SOC_SDMMC_USE_IOMUX
-#include <string.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include "esp_vfs_fat.h"
@@ -29,7 +24,7 @@ namespace PrintServer
         .d7 = GPIO_NUM_18, \
         .cd = SDMMC_SLOT_NO_CD, \
         .wp = SDMMC_SLOT_NO_WP, \
-        .width   = SDMMC_SLOT_WIDTH_DEFAULT, \
+        .width   = 4, \
         .flags = 0, \
     }
 

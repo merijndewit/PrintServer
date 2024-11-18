@@ -13,7 +13,7 @@ namespace PrintServer
 
         esp_vfs_fat_sdmmc_mount_config_t mount_config = 
         {
-            .format_if_mount_failed = false,
+            .format_if_mount_failed = true,
             .max_files = 5,
             .allocation_unit_size = 16 * 1024,
         };
@@ -23,16 +23,11 @@ namespace PrintServer
         ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
 
         host = SDMMC_HOST_DEFAULT();
-        host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
-
+        host.max_freq_khz = SDMMC_FREQ_52M;
+        host.flags = SDMMC_HOST_FLAG_4BIT;
         sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG();
         slot_config.width = 4;
-        slot_config.clk = GPIO_NUM_14;
-        slot_config.cmd = GPIO_NUM_15;
-        slot_config.d0 = GPIO_NUM_2;
-        slot_config.d1 = GPIO_NUM_4;
-        slot_config.d2 = GPIO_NUM_12;
-        slot_config.d3 = GPIO_NUM_13;
+        slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
 
         ret = esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &card);
         if (ret != ESP_OK) 
@@ -121,11 +116,11 @@ namespace PrintServer
         fclose(f);
 
         // strip newline
-        char *pos = strchr(line, '\n');
-        if (pos) 
-        {
-            *pos = '\0';
-        }
+        //char *pos = strchr(line, '\n');
+        //if (pos) 
+        //{
+        //    *pos = '\0';
+        //}
         ESP_LOGI(DEBUG_NAME, "Read from file: '%s'", line);
 
         return ESP_OK;
