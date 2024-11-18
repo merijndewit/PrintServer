@@ -1,6 +1,7 @@
 
 #pragma once
-
+#define SOC_SDMMC_USE_GPIO_MATRIX
+//#define SOC_SDMMC_USE_IOMUX
 #include <string.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -14,6 +15,23 @@ namespace PrintServer
 {
     #define SD_WRITE_MAX_CHAR_SIZE 8192
     #define MOUNT_POINT "/sdcard"
+
+    #define SDMMC_SLOT_CONFIG() {\
+        .clk = GPIO_NUM_6, \
+        .cmd = GPIO_NUM_11, \
+        .d0 = GPIO_NUM_7, \
+        .d1 = GPIO_NUM_8, \
+        .d2 = GPIO_NUM_9, \
+        .d3 = GPIO_NUM_10, \
+        .d4 = GPIO_NUM_16, \
+        .d5 = GPIO_NUM_17, \
+        .d6 = GPIO_NUM_5, \
+        .d7 = GPIO_NUM_18, \
+        .cd = SDMMC_SLOT_NO_CD, \
+        .wp = SDMMC_SLOT_NO_WP, \
+        .width   = SDMMC_SLOT_WIDTH_DEFAULT, \
+        .flags = 0, \
+    }
 
     class ExternalStorage
     {

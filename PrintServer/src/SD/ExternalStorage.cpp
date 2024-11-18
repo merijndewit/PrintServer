@@ -1,6 +1,8 @@
 #include "ExternalStorage.h"
 #include "Config.h"
 
+#include "sdmmc_cmd.h"
+#include "driver/sdmmc_host.h"
 
 namespace PrintServer
 {
@@ -20,31 +22,19 @@ namespace PrintServer
 
         ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
 
-        host = SDSPI_HOST_DEFAULT();
+        host = SDMMC_HOST_DEFAULT();
         host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 
-        spi_bus_config_t bus_cfg = 
-        {
-            .mosi_io_num = PIN_NUM_MOSI,
-            .miso_io_num = PIN_NUM_MISO,
-            .sclk_io_num = PIN_NUM_CLK,
-            .quadwp_io_num = -1,
-            .quadhd_io_num = -1,
-            .max_transfer_sz = 8192,
-        };
-        ret = spi_bus_initialize((spi_host_device_t)(host.slot), &bus_cfg, SDSPI_DEFAULT_DMA);
-        if (ret != ESP_OK) 
-        {
-            ESP_LOGE(DEBUG_NAME, "Failed to initialize bus.");
-            return;
-        }
+        sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG();
+        slot_config.width = 4;
+        slot_config.clk = GPIO_NUM_14;
+        slot_config.cmd = GPIO_NUM_15;
+        slot_config.d0 = GPIO_NUM_2;
+        slot_config.d1 = GPIO_NUM_4;
+        slot_config.d2 = GPIO_NUM_12;
+        slot_config.d3 = GPIO_NUM_13;
 
-        sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-        slot_config.gpio_cs = (gpio_num_t)PIN_NUM_CS;
-        slot_config.host_id = (spi_host_device_t)(host.slot);
-
-        ESP_LOGI(DEBUG_NAME, "Mounting filesystem");
-        ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+        ret = esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &card);
         if (ret != ESP_OK) 
         {
             if (ret == ESP_FAIL) 
