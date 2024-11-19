@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <link href='https://fonts.googleapis.com/css?family=Audiowide' rel='stylesheet'>
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 <body>
 
     <div class="top_bar">
@@ -17,11 +18,21 @@
 
     <div id="main_panels">
         <div class="sandy_brown main_panel sandy_brown_shadow">
-            <strong>Hardware</strong> <br>
-            <div class="sd_container">
-                <img src="https://i.ibb.co/PGtnbyj/sd-card.png" alt="sd-card" style="width:50%;">
-                <div class="centered">?</div>
-            </div>
+            <strong style="width:100%;text-align: center;margin: 0 auto;">Hardware</strong> <br>
+            <div class="div_left_right_container">
+                <div class="left">
+                    <i class="material-icons">sd_card_alert</i><br>
+                    <strong>-</strong><strong> GB</strong><br>
+                    <strong>-</strong><strong> Files</strong><br>
+                    <strong>-</strong><strong> MHZ</strong>
+                </div>
+                <div class="right">
+                    <i class="material-icons">print_disabled</i><br>
+                    <strong>-</strong><strong> Firmware</strong><br>
+                    <strong>-</strong><strong> C Bed </strong><i class="material-icons">device_thermostat</i><br>
+                    <strong>-</strong><strong> C Bed </strong><i class="material-icons">device_thermostat</i><br>
+                </div>
+            </div>        
         </div>
         <div class="cerulean main_panel cerulean_shadow">
             <div class="progress_bar">
@@ -167,6 +178,7 @@
                 margin:50px;
                 padding: 30px;
                 border-radius: 25px;
+                text-align: center;
             }
 
             .sandy_brown
@@ -178,7 +190,7 @@
 
             .sandy_brown_shadow
             {
-                box-shadow: 0px 0px 81px 0px #f49d4bae;
+                box-shadow: 0px 0px 20px 0px #f49d4bae;
             }
 
             .vanilla
@@ -190,7 +202,7 @@
 
             .vanilla_shadow
             {
-                box-shadow: 0px 0px 81px 0px #f5ee9eae;
+                box-shadow: 0px 0px 20px 0px #f5ee9eae;
             }
             
             .cerulean
@@ -202,7 +214,7 @@
             
             .cerulean_shadow
             {
-                box-shadow: 0px 0px 81px 0px #2c718fae;
+                box-shadow: 0px 0px 20px 0px #2c718fae;
             }
 
             .crayola
@@ -214,7 +226,7 @@
 
             .crayola_shadow
             {
-                box-shadow: 0px 0px 81px 0px #db6c79ae;
+                box-shadow: 0px 0px 20px 0px #db6c79ae;
             }
 
             .top_bar {
@@ -261,9 +273,26 @@
 				transition: width 200ms ease-in-out;
 			}
 
+            .div_left_right_container { 
+                display: flex; 
+                justify-content: space-between;
+            } 
+            .left { 
+                width: 45%; 
+                border-style: outset;
+                border-width: 3px;
+                border-radius: 20px;
+            } 
+            .right { 
+                width: 45%; 
+                border-style: outset;
+                border-width: 3px;
+                border-radius: 20px;
+            }
+
             body {
                 margin: 0;
-                background-color: #f2f2f2;
+                background-color: #ffffff;
             }
         </style>
 
