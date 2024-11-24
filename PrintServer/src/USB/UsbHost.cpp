@@ -5,6 +5,7 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "usb/usb_host.h"
+#include "usb/cdc_acm_host.h"
 
 #define DAEMON_TASK_PRIORITY    2
 #define CLASS_TASK_PRIORITY     3
