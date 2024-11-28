@@ -1,7 +1,6 @@
 #include "Core.h"
 #include "driver/gpio.h"
 #include "SD/ExternalStorage.h"
-#include "USB/UsbHost.h"
 
 //#define LED_PIN GPIO_NUM_22
 
@@ -14,14 +13,14 @@ namespace PrintServer
         //gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
         //gpio_set_level(LED_PIN, 0);
-        UsbHost usbHost{};
     }
 
     void Core::update()
     {
-        if (timer.get_time() > 300)
+        if (timer.get_time() > 1000)
         {
             timer.reset();
+            usbHost.Update();
 
             //led_state %= 2;
             //gpio_set_level(LED_PIN, led_state);
