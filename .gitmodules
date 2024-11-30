@@ -1,0 +1,3 @@
+[submodule "PrintServer/vendor/components/tinyusb"]
+	path = PrintServer/vendor/components/tinyusb
+	url = https://github.com/hathach/tinyusb.git

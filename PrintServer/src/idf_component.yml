@@ -1,2 +1,2 @@
 dependencies: 
-  espressif/usb_host_cdc_acm: "2.0.5"
+  espressif/usb_host_cdc_acm: "2.0.6"
