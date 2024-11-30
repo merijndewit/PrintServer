@@ -2,7 +2,7 @@
 #include "WebServer/Webserver.h"
 #include "Wifi/Wifi.h"
 #include "Timers/Timer.h"
-#include "USB/UsbHost.h"
+#include "UART/UART.h"
 
 namespace PrintServer
 {
@@ -20,6 +20,6 @@ namespace PrintServer
         unsigned int led_state = 1;
     private:
         Timer timer;
-        UsbHost usbHost;
+        UART uart;
     };
 };

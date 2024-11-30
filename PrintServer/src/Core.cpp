@@ -17,11 +17,11 @@ namespace PrintServer
 
     void Core::update()
     {
-        usbHost.Update();
 
-        if (timer.get_time() > 1000)
+        if (timer.get_time() > 4000)
         {
             timer.reset();
+            uart.Update();
 
             led_state %= 2;
             gpio_set_level(LED_PIN, led_state);

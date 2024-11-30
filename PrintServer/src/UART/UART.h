@@ -1,4 +1,5 @@
 #pragma once
+#include "driver/uart.h"
 
 namespace PrintServer
 {
@@ -8,7 +9,6 @@ namespace PrintServer
         UART();
         void Update();
     private:
-
 
     };
 }
