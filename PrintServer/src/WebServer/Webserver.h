@@ -22,6 +22,7 @@
 #include "esp_spiffs.h"
 
 #include "esp_http_server.h"
+#include <functional>
 
 namespace PrintServer
 {
@@ -50,9 +51,11 @@ namespace PrintServer
 
         static bool init(const char* base_path);
         static void shutdown();
+        static WebServer& get_instance();
 
         void SendMessageToClients(unsigned char* message, unsigned int buffer_length = 0);
         static esp_err_t SendMessageToClient(httpd_req_t* req, unsigned char* message);
+        void set_callback(std::function<void(const char* message, int len)> callback) { websocket_message_callback = callback; };
     private:
         WebServer(const char* base_path);
 
@@ -65,6 +68,7 @@ namespace PrintServer
         static esp_err_t upload_post_handler(httpd_req_t* req);
     private:
         httpd_handle_t server = NULL;
-        websocket_client_t* clients = NULL; 
+        websocket_client_t* clients = NULL;
+        std::function<void(const char* message, int len)> websocket_message_callback = nullptr;
     };
 }

@@ -1,40 +1,55 @@
 #include "UART.h"
 #include "driver/uart.h"
-#include "../Config.h"
+#include "../../Config.h"
 #include "esp_log.h"
 #include <cstring>
 
 namespace PrintServer
 {
     static const char *TAG = "USB-CDC";
+    std::function<void (const char *message, int len)> callback = nullptr;
 
-    void send(const char *data) 
+    void UART::send(const char *data, int len) 
     {
-        int len = uart_write_bytes(UART_PORT_NUM, data, strlen(data));
+        len = uart_write_bytes(UART_PORT_NUM, data, len);
         ESP_LOGI(TAG, "Sent %d bytes to printer: %s", len, data);
     }
 
-    void uart_read_task(void *arg) 
+    void UART::uart_read_task(void *arg) 
     {
         uint8_t data[UART_BUF_SIZE]; // Buffer to store received data
-        while (1) {
+        while (1) 
+        {
             // Read bytes from UART, non-blocking
-            int len = uart_read_bytes(UART_PORT_NUM, data, sizeof(data), 100 / portTICK_PERIOD_MS); // 100ms timeout
-            if (len > 0) {
+            int len = uart_read_bytes(UART_PORT_NUM, data, sizeof(data), 10 / portTICK_PERIOD_MS); // 100ms timeout
+            if (len > 0) 
+            {
                 data[len] = '\0';  // Null-terminate the string for logging
-                ESP_LOGI(TAG, "Received %d bytes from UART: %s", len, data);
-            } else if (len == 0) {
+                ESP_LOGI(TAG, "Received %d bytes from UART", len);
+                if (callback != nullptr)
+                {
+                    callback((const char*)data, len);
+                }
+                
+            } 
+            else if (len == 0) 
+            {
                 // No data received within timeout
                 ESP_LOGD(TAG, "No data received from UART.");
-            } else {
+            } 
+            else 
+            {
                 // Error in reading UART
                 ESP_LOGE(TAG, "Error reading from UART, length = %d", len);
             }
-            // You can add other logic here to process the data
 
-            // Optional delay (to avoid hogging CPU resources)
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            vTaskDelay(10 / portTICK_PERIOD_MS);
         }
+    }
+
+    void UART::set_callback(std::function<void(const char *message, int len)> set_callback)
+    {
+        callback = set_callback;
     }
 
     UART::UART()
@@ -59,6 +74,5 @@ namespace PrintServer
 
     void UART::Update()
     {
-        send("M115\n");
     }
 }

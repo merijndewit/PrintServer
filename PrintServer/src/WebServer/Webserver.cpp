@@ -9,8 +9,10 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_system.h"
+#include <memory>
 
 #include "Timers/Timer.h"
+#include "server_data.h"
 
 namespace PrintServer
 {
@@ -166,14 +168,14 @@ namespace PrintServer
 
             if (percentage_complete > percentage_updated + 5)
             {
-                unsigned int buffer_length = sprintf(buffer, "10:%.2f%%", percentage_complete);
+                unsigned int buffer_length = sprintf(buffer, "10;%.2f%%", percentage_complete);
                             
                 webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
                 percentage_updated = percentage_complete;
             }
-            
-
         }
+        unsigned int buffer_length = sprintf(buffer, "10;100%%");
+        webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
 
         float time_taken = timer.get_time() / 1000.f;
         float file_size = req->content_len / 1000000.f;
@@ -182,6 +184,7 @@ namespace PrintServer
         ESP_LOGI(DEBUG_NAME, "Writing time was: %f ms", writing_time);
 
         sd_card.close_file();
+
         return ESP_OK;
     }
 
@@ -196,20 +199,107 @@ namespace PrintServer
 
             //will send a websocket response to the connecting websocket client
             error_return = WebServer::SendMessageToClient(req, payload);
-
-            char buffer[128];
-            unsigned int buffer_length = sprintf(buffer, "1;%.2f GB", ExternalStorage::get_instance().get_size());
-
-            //will send a websocket response to the connecting websocket client
-            webserver->SendMessageToClients((unsigned char*)buffer, buffer_length);
         } 
+
+        else 
+        {
+            // Handle incoming WebSocket frames (messages)
+            httpd_ws_frame_t ws_pkt;
+            memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+            ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+
+            error_return = httpd_ws_recv_frame(req, &ws_pkt, 0);
+            if (error_return != ESP_OK) 
+            {
+                ESP_LOGE(DEBUG_NAME, "Failed to receive WebSocket frame: %d", error_return);
+                remove_client(httpd_req_to_sockfd(req));
+                return error_return;
+            }
+
+            if (ws_pkt.len > 0) 
+            {
+                char *buf = (char *)malloc(ws_pkt.len + 1);
+                if (!buf) 
+                {
+                    ESP_LOGE(DEBUG_NAME, "Failed to allocate memory for WebSocket payload");
+                    return ESP_ERR_NO_MEM;
+                }
+
+                ws_pkt.payload = (uint8_t *)buf;
+                error_return = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+                if (error_return != ESP_OK) 
+                {
+                    ESP_LOGE(DEBUG_NAME, "Failed to read WebSocket payload: %d", error_return);
+                    free(buf);
+                    return error_return;
+                }
+
+                buf[ws_pkt.len] = '\0';
+                error_return = WebServer::SendMessageToClient(req, (unsigned char *)buf);
+                if (error_return != ESP_OK) {
+                    ESP_LOGE(DEBUG_NAME, "Failed to echo WebSocket message: %d", error_return);
+                }
+                
+                if (buf[0] == 'h' && buf[1] == 'i') // if "hi" was recieved send the data struct
+                {
+                    char buffer[128];
+                    if(server_data_struct.sd_card_detected)
+                    {
+
+                        //sd speed
+                        sprintf(buffer, "20;%i;", server_data_struct.sd_card_detected);
+                        error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+                        //sd size
+                        sprintf(buffer, "21;%.2f;", ExternalStorage::get_instance().get_size());
+                        error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+                        //sd files
+                        sprintf(buffer, "22;%i;", server_data_struct.sd_file_count);
+                        error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+                        //sd speed
+                        sprintf(buffer, "23;%i;", server_data_struct.sd_speed_mhz);
+                        error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+                        
+                    }
+
+                    //sd speed
+                    sprintf(buffer, "30;%.2f;", saved_server_data_struct.seconds_online / 60.f);
+                    error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+
+                    for (size_t i = 0; i < server_data_struct.sd_file_count; i++)
+                    {
+                        char buffer[300];
+                        sprintf(buffer, "24;%s;", server_data_struct.filenames[i].name);
+                        error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+                    }
+                    
+                    
+                }
+                else if (strncmp(buf, "01", 2) == 0)
+                {
+                    ESP_LOGI(DEBUG_NAME, "requested file print");
+                    webserver->websocket_message_callback(buf + 3, ws_pkt.len - 3);
+                }
+                else if (strncmp(buf, "00", 2) == 0)
+                {
+                    ESP_LOGI(DEBUG_NAME, "requested file deletion");
+                }
+
+                ESP_LOGI(DEBUG_NAME, "Recieved from websocket: %s", buf);
+
+                free(buf);
+            }
+            else
+            {
+                ESP_LOGW(DEBUG_NAME, "Received an empty WebSocket message");
+            }
+        }
         
         if (error_return != ESP_OK) 
         { 
             ESP_LOGE(DEBUG_NAME, "WebSocket recv frame failed: %d", error_return); 
             remove_client(httpd_req_to_sockfd(req)); 
         }
-        
+
         return error_return; 
     }
     
@@ -271,6 +361,11 @@ namespace PrintServer
     void WebServer::shutdown()
     {
 
+    }
+
+    WebServer& WebServer::get_instance()
+    {
+        return *webserver;
     }
 
     //sill send a message to all connected clients

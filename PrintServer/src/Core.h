@@ -2,7 +2,8 @@
 #include "WebServer/Webserver.h"
 #include "Wifi/Wifi.h"
 #include "Timers/Timer.h"
-#include "UART/UART.h"
+#include "PrinterCommunication/UART/UART.h"
+#include "PrinterCommunication/PrinterCommunication.h"
 
 namespace PrintServer
 {
@@ -12,6 +13,7 @@ namespace PrintServer
         Core();
         void update();
         bool is_running() { return running; }
+        void recieved_websocket_command(const char* command, int len);
     private:
         bool running = true;
         bool wifi_connection_successful;
@@ -21,5 +23,6 @@ namespace PrintServer
     private:
         Timer timer;
         UART uart;
+        PrinterCommunication printer_communicator;
     };
 };
