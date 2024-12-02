@@ -35,10 +35,10 @@
             </div>        
         </div>
         <div id="file_container" class="cerulean main_panel cerulean_shadow">
+            <strong>Upload</strong> <br>
             <div class="progress_bar">
 				<span id="upload_progress_bar" class="progress_bar_fill" style="width: 0%;"></span>
 			</div>
-            <strong>Upload</strong> <br>
             <div class="upload_container round_with_children">
                 <input id="selectedFile" type="file" onchange="setpath()" style="display: none;">
                 <input class="material-icons" type="button" value="folder" onclick="document.getElementById('selectedFile').click()" style="border: 0px" />
@@ -48,7 +48,7 @@
         </div>
         <div class="crayola main_panel crayola_shadow">
             <strong>Stats</strong><br>
-            <strong>Total prints:</strong><strong>-</strong><br>
+            <strong>Total prints started:</strong><strong id="total_prints_started">-</strong><br>
             <strong>Total uptime:</strong><strong id="total_print_time">-</strong><br>
         </div>
     </div>
@@ -96,7 +96,10 @@
                     create_upload_container(command[1]);
                     break;
                 case 30:
-                    document.getElementById("total_print_time").innerHTML = command[1];
+                    document.getElementById("total_print_time").innerHTML = command[1]+"min";
+                    break;
+                case 31:
+                    document.getElementById("total_prints_started").innerHTML = command[1];
                     break;
                 default:
                     break;

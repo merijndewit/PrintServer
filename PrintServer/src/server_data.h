@@ -12,6 +12,7 @@ namespace PrintServer
     {
         uint32_t seconds_online = 0;
         uint16_t total_completed_prints = 0;
+        uint16_t total_prints_started = 0;
     };
 
     inline saved_server_data_t saved_server_data_struct;

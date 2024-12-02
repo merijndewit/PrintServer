@@ -262,7 +262,10 @@ namespace PrintServer
                     }
 
                     //sd speed
-                    sprintf(buffer, "30;%.2f;", saved_server_data_struct.seconds_online / 60.f);
+                    sprintf(buffer, "30;%i;", int(saved_server_data_struct.seconds_online / 60));
+                    error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
+                    //sd speed
+                    sprintf(buffer, "31;%i;", saved_server_data_struct.total_prints_started);
                     error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
 
                     for (size_t i = 0; i < server_data_struct.sd_file_count; i++)

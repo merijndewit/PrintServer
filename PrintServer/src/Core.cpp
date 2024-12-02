@@ -24,9 +24,9 @@ namespace PrintServer
 
     void Core::update()
     {
-        if (timer.get_time() > 10000)
+        if (timer.get_time() > 60000)
         {
-            saved_server_data_struct.seconds_online += 10;
+            saved_server_data_struct.seconds_online += 60;
             timer.reset();
             //uart.Update();
 
@@ -34,6 +34,7 @@ namespace PrintServer
             gpio_set_level(LED_PIN, led_state);
             led_state++;
             ExternalStorage::get_instance().save_data();
+            uart.send("M115\n", strlen("M115\n"));
             //unsigned char message[] = { "hi" };
             //webserver.SendMessageToClients(message);
         }

@@ -15,12 +15,12 @@ namespace PrintServer
     #define SAVE_FILE "server_data.bin"
 
     #define SDMMC_SLOT_CONFIG() {\
-        .clk = GPIO_NUM_6, \
-        .cmd = GPIO_NUM_11, \
-        .d0 = GPIO_NUM_7, \
-        .d1 = GPIO_NUM_8, \
-        .d2 = GPIO_NUM_9, \
-        .d3 = GPIO_NUM_10, \
+        .clk = SD_CLOCK_PIN, \
+        .cmd = SD_CMD_PIN, \
+        .d0 = SD_D0, \
+        .d1 = SD_D1, \
+        .d2 = SD_D2, \
+        .d3 = SD_D3, \
         .d4 = GPIO_NUM_16, \
         .d5 = GPIO_NUM_17, \
         .d6 = GPIO_NUM_5, \

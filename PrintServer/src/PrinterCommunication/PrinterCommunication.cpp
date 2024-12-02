@@ -1,4 +1,5 @@
 #include "PrinterCommunication.h"
+#include "server_data.h"
 namespace PrintServer
 {
     PrinterCommunication::PrinterCommunication(UART& uart, ExternalStorage& sd_card) : uart(uart), sd_card(sd_card)
@@ -8,6 +9,7 @@ namespace PrintServer
 
     void PrinterCommunication::print_file(const char *path)
     {
+        saved_server_data_struct.total_prints_started++;
         sd_card.start_reading_file(path);
         recieved_ok();
     }
@@ -25,12 +27,20 @@ namespace PrintServer
     void PrinterCommunication::recieved_message(const char *message, int len)
     {
         ESP_LOGI("PC-R", "recieved: %s", message);
-        if (strncmp(message, "ok", 2) == 0 || strncmp(message, "OK", 2) == 0)
+        if (strncmp(message, "ok", 2) == 0)
         {
             can_send = true;
             recieved_ok();
         }
-        
+        else
+        {
+            const char *last_three = &message[len-3]; // this is for when the message ends with an 'ok' like: '... ok\n'
+            if (strncmp(last_three, "ok", 2) == 0)
+            {
+                can_send = true;
+                recieved_ok();
+            }    
+        }        
     }
 
     void PrinterCommunication::Update()

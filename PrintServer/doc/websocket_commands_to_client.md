@@ -13,6 +13,7 @@ Here you will find a list of all the websocket commands that can be send from th
 | 20  | (sd connected) | (%i) | 0-1 |
 | 21  | (available memory in gb)    | (%.1f) | - |
 | 22  | (file count)    | (%i) | 0-32 |
-| 23  | (sd speed)    | (%i) | 0-32 |
+| 23  | (sd speed)    | (%i) | - |
 | 24  | (stored file)    | (%s) | 0-128 |
 | 30  | (minutes online)    | (%.2f) | - |
+| 30  | (total prints printed)    | (%i) | - |
