@@ -1,7 +1,12 @@
 .pio
-PrintServer/.vscode/*
+.vscode/*
 sdkconfig*
 
-PrintServer/src/Config.h
-PrintServer/.cache/
-PrintServer/compile_commands.json
+src/Config.h
+.cache/
+compile_commands.json
+managed_components/*
+*.csv
+*.lock
+vendor
+build
