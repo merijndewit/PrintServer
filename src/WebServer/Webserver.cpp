@@ -271,7 +271,7 @@ namespace PrintServer
                     for (size_t i = 0; i < server_data_struct.sd_file_count; i++)
                     {
                         char buffer[300];
-                        sprintf(buffer, "24;%s;", server_data_struct.filenames[i].name);
+                        sprintf(buffer, "24;%s;", server_data_struct.filenames[server_data_struct.next_file_index(i)].name);
                         error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
                     }
                     
@@ -285,6 +285,7 @@ namespace PrintServer
                 else if (strncmp(buf, "00", 2) == 0)
                 {
                     ESP_LOGI(DEBUG_NAME, "requested file deletion");
+                    ExternalStorage::get_instance().delete_file(buf + 3);
                 }
 
                 ESP_LOGI(DEBUG_NAME, "Recieved from websocket: %s", buf);

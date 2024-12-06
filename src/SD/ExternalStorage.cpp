@@ -102,8 +102,7 @@ namespace PrintServer
             {
                 if (S_ISREG(entry_stat.st_mode)) 
                 {
-                    ESP_LOGI("SD","  File: %s\n", entry->d_name);
-                    strncpy(server_data_struct.filenames[file_index++].name, entry->d_name, 192);
+                    server_data_struct.add_file(entry->d_name);
                 } 
                 else if (S_ISDIR(entry_stat.st_mode)) 
                 {
@@ -115,7 +114,7 @@ namespace PrintServer
                 ESP_LOGI("SD","  Failed to stat: %s\n", full_path);
             }
         }
-        server_data_struct.sd_file_count = file_index;
+        //server_data_struct.sd_file_count = file_index;
         closedir(dir);
     }
 
@@ -247,6 +246,7 @@ namespace PrintServer
     void ExternalStorage::open_file(const char *path)
     {
         ESP_LOGI(DEBUG_NAME, "Opening file %s", path);
+        server_data_struct.add_file(path + strlen(MOUNT_POINT"/"));
         current_open_file = fopen(path, "w");
         if (current_open_file == NULL) 
         {
@@ -267,6 +267,17 @@ namespace PrintServer
     {
         fclose(current_open_file);
         current_open_file = nullptr;
+    }
+
+    void ExternalStorage::delete_file(const char *filename)
+    {
+        char full_path[256];
+        snprintf(full_path, sizeof(full_path) + 1, "%s/%s", MOUNT_POINT, (char*)(filename));
+        ESP_LOGI(DEBUG_NAME, "Deleting file: %s", full_path);
+
+        remove(full_path);
+
+        server_data_struct.remove_file(filename);
     }
 
     //Returns chars written
