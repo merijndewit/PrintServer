@@ -15,7 +15,7 @@ namespace PrintServer
             .max_files = 5,
             .allocation_unit_size = 16 * 1024,
         };
-        const char mount_point[] = MOUNT_POINT;
+        const char mount_point[] = SD_MOUNT_POINT;
         ESP_LOGI(DEBUG_NAME, "Initializing SD card");
 
         ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
