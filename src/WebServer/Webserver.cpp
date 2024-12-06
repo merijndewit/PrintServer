@@ -127,7 +127,7 @@ namespace PrintServer
         int remaining = req->content_len; 
 
         char file_path[256 + 64]; // should probably make something to calculate the correct size
-        strcpy(file_path, MOUNT_POINT);
+        strcpy(file_path, SD_MOUNT_POINT);
         strcat(file_path, "/");
         filename += strlen(UPLOAD_PATH); // move pointer by the length of UPLOAD_PATH
         strcat(file_path, filename);
@@ -250,7 +250,7 @@ namespace PrintServer
                         sprintf(buffer, "20;%i;", server_data_struct.sd_card_detected);
                         error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
                         //sd size
-                        sprintf(buffer, "21;%.2f;", ExternalStorage::get_instance().get_size());
+                        sprintf(buffer, "21;%.2f;", server_data_struct.sd_size_gb);
                         error_return = WebServer::SendMessageToClient(req, (unsigned char*)buffer);
                         //sd files
                         sprintf(buffer, "22;%i;", server_data_struct.sd_file_count);

@@ -24,20 +24,23 @@ namespace PrintServer
 
     void Core::update()
     {
-        if (timer.get_time() > 60000)
+        if (timer.get_time() > 50000)
         {
             saved_server_data_struct.seconds_online += 60;
             timer.reset();
-            //uart.Update();
+            uart.Update();
 
             led_state %= 2;
             gpio_set_level(LED_PIN, led_state);
             led_state++;
             ExternalStorage::get_instance().save_data();
-            uart.send("M115\n", strlen("M115\n"));
+            //uart.send("M115\n", strlen("M115\n"));
+            //usb_host.Update();
+
             //unsigned char message[] = { "hi" };
             //webserver.SendMessageToClients(message);
         }
+
     }
 
     void Core::recieved_websocket_command(const char *command, int len)

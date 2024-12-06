@@ -1,11 +1,6 @@
 #include "ExternalStorage.h"
 #include "Config.h"
-#include "server_data.h"
 
-#include "sdmmc_cmd.h"
-#include "driver/sdmmc_host.h"
-#include "driver/sdmmc_defs.h"
-#include "sdmmc_cmd.h"
 #include <dirent.h>
 #include "esp_vfs_fat.h"
 
@@ -16,10 +11,10 @@ namespace PrintServer
     void ExternalStorage::start_reading_file(const char *path)
     {
         reserved_reading = true;
-        char buffer[256 + strlen((MOUNT_POINT"/"))];
+        char buffer[256 + strlen((SD_MOUNT_POINT"/"))];
         buffer[0] = '\0';
 
-        strcpy(buffer, (MOUNT_POINT"/"));
+        strcpy(buffer, (SD_MOUNT_POINT"/"));
         strcat(buffer, path);
 
         open_file_read(buffer);
@@ -165,61 +160,18 @@ namespace PrintServer
     {
         esp_err_t ret;
 
-        esp_vfs_fat_sdmmc_mount_config_t mount_config = 
-        {
-            .format_if_mount_failed = true,
-            .max_files = 5,
-            .allocation_unit_size = 16 * 1024,
-        };
-
-        ESP_LOGI(DEBUG_NAME, "Initializing SD card");
-
-        ESP_LOGI(DEBUG_NAME, "Using SPI peripheral");
-
-        host = SDMMC_HOST_DEFAULT();
-        host.max_freq_khz = SDMMC_FREQ_52M;
-        host.flags = SDMMC_HOST_FLAG_4BIT;
-        sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG();
-        slot_config.width = 4;
-        slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
-
-        ret = esp_vfs_fat_sdmmc_mount(MOUNT_POINT, &host, &slot_config, &mount_config, &card);
-        if (ret != ESP_OK) 
-        {
-            server_data_struct.sd_card_detected = 0;
-            if (ret == ESP_FAIL) 
-            {
-                ESP_LOGE(DEBUG_NAME, "Failed to mount filesystem. "
-                        "If you want the card to be formatted, set the CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
-            } 
-            else 
-            {
-                ESP_LOGE(DEBUG_NAME, "Failed to initialize the card (%s). "
-                        "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
-            }
-            return;
-        }
-        ESP_LOGI(DEBUG_NAME, "Filesystem mounted");
-
-        sdmmc_card_print_info(stdout, card);
-
-        uint64_t capacity = (double)card->csd.capacity * card->csd.sector_size / (1024.0 * 1024.0 * 1024.0);
-        gb_size = capacity;
-        server_data_struct.sd_size_gb = capacity;
-        server_data_struct.sd_speed_mhz = host.max_freq_khz / 1000;
+        server_data_struct.sd_size_gb = sd_device.get_capacity();
+        server_data_struct.sd_speed_mhz = sd_device.get_freq_mhz();
         server_data_struct.sd_card_detected = 1;
 
-        list_files_in_directory(MOUNT_POINT);
+        list_files_in_directory(SD_MOUNT_POINT);
 
         read_struct_from_file("/sdcard/"SAVE_FILE, &saved_server_data_struct);
     }
 
     ExternalStorage::~ExternalStorage()
     {
-        esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
-        ESP_LOGI(DEBUG_NAME, "Card unmounted");
 
-        spi_bus_free((spi_host_device_t)(host.slot));
     }
 
     void ExternalStorage::save_data()
@@ -246,7 +198,7 @@ namespace PrintServer
     void ExternalStorage::open_file(const char *path)
     {
         ESP_LOGI(DEBUG_NAME, "Opening file %s", path);
-        server_data_struct.add_file(path + strlen(MOUNT_POINT"/"));
+        server_data_struct.add_file(path + strlen(SD_MOUNT_POINT"/"));
         current_open_file = fopen(path, "w");
         if (current_open_file == NULL) 
         {
@@ -272,7 +224,7 @@ namespace PrintServer
     void ExternalStorage::delete_file(const char *filename)
     {
         char full_path[256];
-        snprintf(full_path, sizeof(full_path) + 1, "%s/%s", MOUNT_POINT, (char*)(filename));
+        snprintf(full_path, sizeof(full_path) + 1, "%s/%s", SD_MOUNT_POINT, (char*)(filename));
         ESP_LOGI(DEBUG_NAME, "Deleting file: %s", full_path);
 
         remove(full_path);
@@ -315,9 +267,6 @@ namespace PrintServer
 
     void ExternalStorage::unmount() 
     {
-        esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
-        ESP_LOGI(DEBUG_NAME, "Card unmounted");
 
-        spi_bus_free((spi_host_device_t)(host.slot));
     };
 }

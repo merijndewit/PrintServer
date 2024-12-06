@@ -43,7 +43,7 @@ namespace PrintServer
                 ESP_LOGE(TAG, "Error reading from UART, length = %d", len);
             }
 
-            vTaskDelay(10 / portTICK_PERIOD_MS);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
         }
     }
 

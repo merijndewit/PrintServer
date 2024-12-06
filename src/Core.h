@@ -4,6 +4,7 @@
 #include "Timers/Timer.h"
 #include "PrinterCommunication/UART/UART.h"
 #include "PrinterCommunication/PrinterCommunication.h"
+#include "PrinterCommunication/USB/UsbHost.h"
 
 namespace PrintServer
 {
@@ -24,5 +25,6 @@ namespace PrintServer
         Timer timer;
         UART uart;
         PrinterCommunication printer_communicator;
+        //UsbHost usb_host;
     };
 };

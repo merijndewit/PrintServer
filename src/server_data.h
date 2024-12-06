@@ -21,7 +21,7 @@ namespace PrintServer
     struct server_data_t
     {
         uint16_t sd_file_count = 0;
-        uint16_t sd_size_gb = 0;
+        float sd_size_gb = 0;
         uint16_t sd_speed_mhz = 0;
         uint16_t sd_card_detected = 0;
 

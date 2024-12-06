@@ -2,6 +2,7 @@
 #include "spi_flash_mmap.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
+#include "includes.h"
 
 extern "C" void app_main() 
 {
